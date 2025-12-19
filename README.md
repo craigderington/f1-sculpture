@@ -337,7 +337,6 @@ SCULPTURE_CACHE_TTL=86400  # 24 hours
 Ideas for new visualizations or features? Open an issue or submit a PR!
 
 ### Future Enhancements
-- [ ] Multi-driver comparison in UI (backend ready)
 - [ ] Animation through lap progression
 - [ ] Tire compound visualization
 - [ ] Sector-based color coding
@@ -349,14 +348,14 @@ Ideas for new visualizations or features? Open an issue or submit a PR!
 
 MIT License - Feel free to use and modify
 
-## 🙏 Credits
+## 🙏 Special Thanks and Credit:
 
-- **FastF1**: Amazing Python library for F1 data access
-- **Three.js**: Powerful 3D graphics library
+- **[FastF1](https://github.com/theOehrly/Fast-F1)**: Amazing Python library for F1 data access by Philipp Schaefer [@theOehrly](https://github.com/theOehrly)
+- **[Three.js](https://threejs.org/)**: Powerful 3D graphics library
 - **F1 Community**: For making telemetry data accessible
 
 ---
 
 **Built with ❤️ for F1 fans who appreciate data visualization**
 
-v2.0 - Async Edition | [Documentation](./CLAUDE.md) | [API Docs](http://localhost:8000/docs)
+v2.0 - Async Edition [@craigderington](https://craigderington.dev)
