@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import logging
+import asyncio
 from typing import List
 
 # Local imports
@@ -386,15 +387,26 @@ async def websocket_task_updates(websocket: WebSocket, task_id: str):
 
             elif task_result.state == 'PROGRESS':
                 if task_result.info:
-                    await ws_manager.broadcast_progress(
-                        task_id,
-                        task_result.info.get('stage', 'processing'),
-                        task_result.info.get('progress', 0),
-                        task_result.info.get('message', 'Processing...')
-                    )
+                    # Extract metadata for full session details display
+                    metadata = {
+                        'year': task_result.info.get('year'),
+                        'event_name': task_result.info.get('event_name'),
+                        'session_name': task_result.info.get('session_name'),
+                        'session_date': task_result.info.get('session_date'),
+                        'driver': task_result.info.get('driver')
+                    }
 
-            # Wait before next poll (adjust based on needs)
-            await websocket.receive_text()  # Keep connection alive
+                    await ws_manager.send_message(task_id, {
+                        'type': 'progress',
+                        'task_id': task_id,
+                        'stage': task_result.info.get('stage', 'processing'),
+                        'progress': task_result.info.get('progress', 0),
+                        'message': task_result.info.get('message', 'Processing...'),
+                        'metadata': metadata
+                    })
+
+            # Wait before next poll (poll every 500ms for smooth updates)
+            await asyncio.sleep(0.5)
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected for task {task_id}")

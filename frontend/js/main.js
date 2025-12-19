@@ -7,6 +7,7 @@ import F1API from './api.js';
 import TaskWebSocket from './websocket.js';
 import ProgressUI from './ui.js';
 import SceneManager from './scene.js';
+import { applyTeamTheme } from './team-colors.js';
 
 class F1SculptureApp {
     constructor() {
@@ -15,6 +16,9 @@ class F1SculptureApp {
         this.sceneManager = new SceneManager('canvas-container');
         this.currentWebSocket = null;
         this.pollingInterval = null;
+
+        // Cache for driver lists (so Reset Driver is instant)
+        this.driverCache = {};
 
         // Make API available globally for cancel button
         window.api = this.api;
@@ -31,6 +35,9 @@ class F1SculptureApp {
 
         // Setup event listeners
         this.setupEventListeners();
+
+        // Initialize reset button visibility
+        this.updateResetButtonVisibility();
 
         // Load initial data
         await this.loadInitialData();
@@ -65,6 +72,7 @@ class F1SculptureApp {
             if (session) {
                 await this.loadDrivers(year, round, session);
             }
+            this.updateResetButtonVisibility();
         });
 
         // Generate sculpture button
@@ -77,9 +85,24 @@ class F1SculptureApp {
             this.sceneManager.resetCamera();
         });
 
+        // Reset driver button
+        document.getElementById('reset-driver').addEventListener('click', () => {
+            this.resetDriver();
+        });
+
+        // Reset session button
+        document.getElementById('reset-session').addEventListener('click', () => {
+            this.resetSession();
+        });
+
         // Toggle controls button
         document.getElementById('toggle-controls').addEventListener('click', () => {
             document.getElementById('controls').classList.toggle('hidden');
+        });
+
+        // Toggle stats panel
+        document.getElementById('toggle-stats').addEventListener('click', () => {
+            this.toggleStats();
         });
     }
 
@@ -163,29 +186,54 @@ class F1SculptureApp {
      */
     async loadDrivers(year, round, session) {
         const driverSelect = document.getElementById('driver');
+        const cacheKey = `${year}-${round}-${session}`;
 
         try {
+            // Check if we have cached drivers
+            if (this.driverCache[cacheKey]) {
+                console.log('Loading drivers from cache (instant!)');
+                this.populateDriverDropdown(this.driverCache[cacheKey]);
+                return;
+            }
+
             // Show loading state (can take 30-60s for first load)
             driverSelect.innerHTML = '<option value="">Loading drivers (may take up to 60s)...</option>';
             driverSelect.disabled = true;
 
             const data = await this.api.getDrivers(year, round, session);
 
-            driverSelect.innerHTML = '<option value="">Select a driver...</option>';
-            data.drivers.forEach(driver => {
-                const option = document.createElement('option');
-                option.value = driver.abbreviation;
-                option.textContent = `#${driver.number} ${driver.fullName} - ${driver.abbreviation} (${driver.teamName})`;
-                driverSelect.appendChild(option);
-            });
-            driverSelect.disabled = false;
+            // Cache the driver list
+            this.driverCache[cacheKey] = data.drivers;
 
-            console.log(`Loaded ${data.drivers.length} drivers`);
+            this.populateDriverDropdown(data.drivers);
+
+            console.log(`Loaded ${data.drivers.length} drivers (cached for future)`);
         } catch (error) {
             console.error('Error loading drivers:', error);
             driverSelect.innerHTML = '<option value="">Error loading drivers</option>';
             driverSelect.disabled = false;
         }
+    }
+
+    /**
+     * Populate driver dropdown from driver list
+     */
+    populateDriverDropdown(drivers) {
+        const driverSelect = document.getElementById('driver');
+
+        driverSelect.innerHTML = '<option value="">Select a driver...</option>';
+        drivers.forEach(driver => {
+            const option = document.createElement('option');
+            option.value = driver.abbreviation;
+            option.textContent = `#${driver.number} ${driver.fullName} - ${driver.abbreviation} (${driver.teamName})`;
+            driverSelect.appendChild(option);
+        });
+        driverSelect.disabled = false;
+
+        // Add change listener to update reset button visibility
+        driverSelect.addEventListener('change', () => {
+            this.updateResetButtonVisibility();
+        });
     }
 
     /**
@@ -372,6 +420,12 @@ class F1SculptureApp {
         document.getElementById('stat-maxg').textContent = data.metadata.maxGForce.toFixed(2) + 'G';
         document.getElementById('stat-avgg').textContent = data.metadata.avgGForce.toFixed(2) + 'G';
         document.getElementById('stat-speed').textContent = data.metadata.maxSpeed.toFixed(0) + ' km/h';
+
+        // Apply team color theme
+        if (data.driver && data.driver.teamName) {
+            applyTeamTheme(data.driver.teamName);
+            console.log(`Applied theme for ${data.driver.teamName}`);
+        }
     }
 
     /**
@@ -387,6 +441,98 @@ class F1SculptureApp {
             }
         } catch (error) {
             console.error('Health check failed:', error);
+        }
+    }
+
+    /**
+     * Reset driver selection
+     */
+    resetDriver() {
+        const driverSelect = document.getElementById('driver');
+        driverSelect.innerHTML = '<option value="">Select a driver...</option>';
+
+        // Reload drivers for the current session
+        const year = document.getElementById('year').value;
+        const round = document.getElementById('event').value;
+        const session = document.getElementById('session').value;
+
+        if (year && round && session) {
+            this.loadDrivers(year, round, session);
+        }
+
+        // Update reset button visibility
+        this.updateResetButtonVisibility();
+
+        console.log('Driver selection reset');
+    }
+
+    /**
+     * Reset session and driver selections
+     */
+    resetSession() {
+        const sessionSelect = document.getElementById('session');
+        const driverSelect = document.getElementById('driver');
+
+        sessionSelect.innerHTML = '<option value="">Select a session...</option>';
+        driverSelect.innerHTML = '<option value="">Select session first...</option>';
+
+        // Reload sessions for the current event
+        const year = document.getElementById('year').value;
+        const round = document.getElementById('event').value;
+
+        if (year && round) {
+            this.loadSessions(year, round);
+        }
+
+        // Update reset button visibility
+        this.updateResetButtonVisibility();
+
+        console.log('Session and driver selections reset');
+    }
+
+    /**
+     * Toggle stats panel minimize/expand
+     */
+    toggleStats() {
+        const infoPanel = document.getElementById('info');
+        const toggleBtn = document.getElementById('toggle-stats');
+
+        infoPanel.classList.toggle('minimized');
+
+        // Update button icon and title
+        if (infoPanel.classList.contains('minimized')) {
+            toggleBtn.textContent = '▲';
+            toggleBtn.title = 'Expand stats';
+        } else {
+            toggleBtn.textContent = '▼';
+            toggleBtn.title = 'Minimize stats';
+        }
+    }
+
+    /**
+     * Update reset button visibility based on selections
+     */
+    updateResetButtonVisibility() {
+        const sessionSelect = document.getElementById('session');
+        const driverSelect = document.getElementById('driver');
+        const resetDriverBtn = document.getElementById('reset-driver');
+        const resetSessionBtn = document.getElementById('reset-session');
+
+        const hasSession = sessionSelect.value !== '';
+        const hasDriver = driverSelect.value !== '';
+
+        // Show reset driver button only if driver is selected
+        if (hasDriver) {
+            resetDriverBtn.classList.remove('hidden');
+        } else {
+            resetDriverBtn.classList.add('hidden');
+        }
+
+        // Show reset session button only if session is selected
+        if (hasSession) {
+            resetSessionBtn.classList.remove('hidden');
+        } else {
+            resetSessionBtn.classList.add('hidden');
         }
     }
 }

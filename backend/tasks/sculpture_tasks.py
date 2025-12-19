@@ -52,76 +52,119 @@ def generate_sculpture_task(
     Returns:
         Complete sculpture data dictionary
 
-    Progress stages:
-        - loading_session (20%): Loading F1 session data
-        - extracting_telemetry (50%): Extracting driver telemetry
-        - processing_sculpture (80%): Processing G-force calculations
+    Progress stages with granular updates:
+        - loading_session (5% - 35%): Loading F1 session data from servers
+        - extracting_telemetry (40% - 65%): Finding driver and extracting fastest lap
+        - processing_sculpture (70% - 95%): Processing G-force calculations and building sculpture
+        - Complete (100%): Final sculpture data ready
     """
     try:
         logger.info(f"Starting sculpture generation: {year} R{round} {session} - {driver}")
 
-        # Stage 1: Loading session (20%)
+        # Map session codes to friendly display names EARLY (before any progress updates)
+        session_display_names = {
+            'FP1': 'Practice 1',
+            'FP2': 'Practice 2',
+            'FP3': 'Practice 3',
+            'Q': 'Qualifying',
+            'S': 'Sprint Race',
+            'SS': 'Sprint Shootout',
+            'SQ': 'Sprint Qualifying',
+            'R': 'Race'
+        }
+        session_friendly_name = session_display_names.get(session, session)
+
+        # Stage 1: Loading session (5% - 35%)
         self.update_state(
             state='PROGRESS',
             meta={
                 'stage': 'loading_session',
-                'progress': 20,
-                'message': f'Loading {year} Round {round} {session} session data...'
+                'progress': 5,
+                'message': f'Initializing {session_friendly_name} session for Round {round}...',
+                'year': year,
+                'session_name': session_friendly_name
             }
         )
 
         f1_service = FastF1Service()
+
+        # Update progress before loading (session loading can take 30-60s)
+        self.update_state(
+            state='PROGRESS',
+            meta={
+                'stage': 'loading_session',
+                'progress': 10,
+                'message': f'Downloading {session_friendly_name} session data from F1 servers...',
+                'year': year,
+                'session_name': session_friendly_name
+            }
+        )
+
         session_obj = f1_service.load_session(year, round, session)
 
         # Get full session details for better UI display
         event_name = session_obj.event['EventName']
-        session_name = session_obj.name
         session_date = str(session_obj.date.date()) if hasattr(session_obj.date, 'date') else str(session_obj.date)
 
-        logger.info(f"Session loaded: {event_name} {session_name}")
+        logger.info(f"Session loaded: {event_name} {session_friendly_name}")
 
         # Update with full details
         self.update_state(
             state='PROGRESS',
             meta={
                 'stage': 'loading_session',
-                'progress': 25,
-                'message': f'Loading {year} {event_name} - {session_name} ({session_date})',
+                'progress': 35,
+                'message': f'Session loaded: {event_name} - {session_friendly_name}',
                 'event_name': event_name,
-                'session_name': session_name,
+                'session_name': session_friendly_name,
                 'session_date': session_date,
                 'year': year
             }
         )
 
-        # Stage 2: Extracting telemetry (50%)
+        # Stage 2: Extracting telemetry (40% - 65%)
         self.update_state(
             state='PROGRESS',
             meta={
                 'stage': 'extracting_telemetry',
-                'progress': 50,
-                'message': f'Extracting telemetry for {driver} - {event_name} {session_name}',
+                'progress': 40,
+                'message': f'Finding {driver} in {event_name}...',
                 'event_name': event_name,
-                'session_name': session_name,
+                'session_name': session_friendly_name,
                 'session_date': session_date,
                 'year': year,
                 'driver': driver
             }
         )
 
+        # Extract telemetry
         telemetry, lap_info = f1_service.get_driver_fastest_lap_telemetry(session_obj, driver)
 
         logger.info(f"Telemetry extracted: {len(telemetry)} data points")
 
-        # Stage 3: Processing sculpture (80%)
+        self.update_state(
+            state='PROGRESS',
+            meta={
+                'stage': 'extracting_telemetry',
+                'progress': 65,
+                'message': f'Telemetry extracted: {len(telemetry)} data points from {driver}',
+                'event_name': event_name,
+                'session_name': session_friendly_name,
+                'session_date': session_date,
+                'year': year,
+                'driver': driver
+            }
+        )
+
+        # Stage 3: Processing sculpture (70% - 95%)
         self.update_state(
             state='PROGRESS',
             meta={
                 'stage': 'processing_sculpture',
-                'progress': 80,
-                'message': f'Processing G-force calculations for {driver}',
+                'progress': 70,
+                'message': f'Calculating G-forces for {driver}...',
                 'event_name': event_name,
-                'session_name': session_name,
+                'session_name': session_friendly_name,
                 'session_date': session_date,
                 'year': year,
                 'driver': driver
@@ -130,6 +173,21 @@ def generate_sculpture_task(
 
         processor = TelemetryProcessor()
         sculpture_data = processor.process_telemetry_to_sculpture(telemetry)
+
+        # Update after processing
+        self.update_state(
+            state='PROGRESS',
+            meta={
+                'stage': 'processing_sculpture',
+                'progress': 95,
+                'message': f'Finalizing sculpture for {driver}...',
+                'event_name': event_name,
+                'session_name': session_friendly_name,
+                'session_date': session_date,
+                'year': year,
+                'driver': driver
+            }
+        )
 
         # Add driver info
         sculpture_data['driver'] = lap_info

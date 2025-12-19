@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 60">
+  <!-- Black background -->
+  <rect width="100" height="60" fill="#000000" rx="4"/>
+
+  <!-- F1 Logo in red -->
+  <g fill="#E10600">
+    <!-- F -->
+    <path d="M 20 15 L 45 15 L 45 22 L 28 22 L 28 28 L 42 28 L 42 35 L 28 35 L 28 45 L 20 45 Z"/>
+
+    <!-- 1 -->
+    <path d="M 52 15 L 60 15 L 60 45 L 52 45 L 52 22 L 48 22 L 48 15 L 52 15 Z"/>
+
+    <!-- Speed lines -->
+    <line x1="65" y1="25" x2="85" y2="25" stroke="#E10600" stroke-width="2" opacity="0.6"/>
+    <line x1="68" y1="32" x2="88" y2="32" stroke="#E10600" stroke-width="2" opacity="0.5"/>
+    <line x1="65" y1="39" x2="85" y2="39" stroke="#E10600" stroke-width="2" opacity="0.4"/>
+  </g>
+</svg>

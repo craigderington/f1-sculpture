@@ -1,5 +1,12 @@
 /* F1 G-Force Sculpture Gallery - Styles */
 
+:root {
+    /* Default theme colors (McLaren Papaya Orange - muted) */
+    --theme-primary: #E87800;
+    --theme-secondary: #F09030;
+    --theme-accent: #1E1E1E;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -40,8 +47,27 @@ body {
 #controls h1 {
     font-size: 24px;
     margin-bottom: 20px;
-    color: #FF8700;
-    text-shadow: 0 0 10px rgba(255, 135, 0, 0.5);
+    color: var(--theme-primary);
+    text-shadow: 0 0 10px color-mix(in srgb, var(--theme-primary) 50%, transparent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1;
+}
+
+.f1-logo {
+    height: 28px;
+    width: auto;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.f1-logo:hover {
+    opacity: 0.7;
+    transform: scale(1.05);
 }
 
 .control-group {
@@ -57,38 +83,90 @@ body {
 
 select, button {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #333;
+    padding: 12px 14px;
+    border: 2px solid #333;
     background: #1a1a1a;
     color: #fff;
-    border-radius: 5px;
+    border-radius: 8px;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+/* Modern select dropdown styling */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23E87800' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+    padding-right: 36px;
 }
 
 select:hover, button:hover {
-    border-color: #FF8700;
-    background: #252525;
+    border-color: var(--theme-primary);
+    background-color: #252525;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--theme-primary);
+    background-color: #2a2a2a;
+    box-shadow: 0 0 0 3px rgba(232, 120, 0, 0.1);
+}
+
+select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+select option {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px;
 }
 
 button {
-    background: #FF8700;
+    background: var(--theme-primary);
     border: none;
     font-weight: bold;
     margin-top: 10px;
 }
 
 button:hover {
-    background: #FFA500;
+    background: var(--theme-secondary);
+    color: #000;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(255, 135, 0, 0.4);
+    box-shadow: 0 5px 15px color-mix(in srgb, var(--theme-primary) 40%, transparent);
 }
 
 button:disabled {
     background: #555;
     cursor: not-allowed;
     transform: none;
+}
+
+.button-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.button-row.hidden {
+    display: none;
+}
+
+.button-row .half-width {
+    flex: 1;
+    margin-top: 0;
+}
+
+.button-row .half-width.hidden {
+    display: none;
 }
 
 /* Info Panel */
@@ -101,12 +179,57 @@ button:disabled {
     border-radius: 10px;
     backdrop-filter: blur(10px);
     min-width: 250px;
+    margin-bottom: 40px;
+    transition: all 0.3s ease;
+}
+
+#info.minimized {
+    padding: 10px 15px;
+}
+
+.info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
 #info h3 {
-    color: #FF8700;
-    margin-bottom: 10px;
+    color: var(--theme-primary);
     font-size: 16px;
+    margin: 0;
+}
+
+.toggle-stats-btn {
+    background: transparent;
+    border: none;
+    color: var(--theme-primary);
+    cursor: pointer;
+    padding: 5px;
+    font-size: 12px;
+    transition: all 0.3s;
+    width: auto;
+    margin: 0;
+    min-width: 24px;
+}
+
+.toggle-stats-btn:hover {
+    color: var(--theme-secondary);
+    background: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    transform: none;
+    box-shadow: none;
+}
+
+.stats-content {
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+}
+
+#info.minimized .stats-content {
+    max-height: 0;
+    opacity: 0;
 }
 
 #info p {
@@ -126,7 +249,7 @@ button:disabled {
 }
 
 .stat-value {
-    color: #FF8700;
+    color: var(--theme-primary);
     font-weight: bold;
 }
 
@@ -177,6 +300,21 @@ button:disabled {
     justify-content: center;
     gap: 15px;
     min-height: 40px;
+    flex-direction: column;
+}
+
+.session-details {
+    font-size: 14px;
+    color: var(--theme-primary);
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.session-date {
+    font-size: 12px;
+    color: #888;
+    font-weight: normal;
 }
 
 .stage-icon {
@@ -208,7 +346,7 @@ button:disabled {
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-    transition: width 0.5s ease, background-color 0.3s ease;
+    transition: width 0.3s ease-out, background 0.3s ease;
     border-radius: 15px;
     position: relative;
 }
@@ -238,7 +376,7 @@ button:disabled {
 
 .progress-percentage {
     font-size: 18px;
-    color: #FF8700;
+    color: var(--theme-primary);
     font-weight: bold;
     margin-bottom: 20px;
 }
@@ -353,4 +491,53 @@ button:disabled {
     background: #f59e0b;
     box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
     animation: pulse 1s infinite;
+}
+
+/* Footer */
+#footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid color-mix(in srgb, var(--theme-primary) 30%, transparent);
+    z-index: 50;
+    padding: 12px 20px;
+}
+
+.footer-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.footer-text {
+    color: #aaa;
+}
+
+.footer-separator {
+    color: #555;
+}
+
+.footer-link {
+    color: var(--theme-primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s;
+}
+
+.footer-link:hover {
+    color: var(--theme-secondary);
+    text-shadow: 0 0 8px color-mix(in srgb, var(--theme-primary) 50%, transparent);
+}
+
+.github-icon {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
 }

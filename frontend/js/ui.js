@@ -65,7 +65,7 @@ class ProgressUI {
      * Update progress with stage information
      */
     updateProgress(stage, progress, message, metadata = {}) {
-        // Update progress bar
+        // Update progress bar directly (no animation - too fast when cached)
         if (this.progressBar) {
             this.progressBar.style.width = `${progress}%`;
             this.progressBar.setAttribute('aria-valuenow', progress);
@@ -126,17 +126,19 @@ class ProgressUI {
             let sessionDetails = '';
             if (metadata.year && metadata.event_name && metadata.session_name) {
                 sessionDetails = `
-                    <div style="font-size: 14px; color: #FF8700; margin-bottom: 10px; font-weight: 600;">
+                    <div class="session-details">
                         ${metadata.year} ${metadata.event_name} - ${metadata.session_name}
-                        ${metadata.session_date ? `<br><span style="font-size: 12px; color: #888;">${metadata.session_date}</span>` : ''}
+                        ${metadata.session_date ? `<br><span class="session-date">${metadata.session_date}</span>` : ''}
                     </div>
                 `;
             }
 
             this.progressStage.innerHTML = `
                 ${sessionDetails}
-                <span class="stage-icon">${stageInfo.icon}</span>
-                <span class="stage-label">${stageInfo.label}</span>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span class="stage-icon">${stageInfo.icon}</span>
+                    <span class="stage-label">${stageInfo.label}</span>
+                </div>
             `;
         }
 

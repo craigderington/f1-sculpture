@@ -56,13 +56,25 @@ class FastF1Service:
         logger.info(f"Fetching sessions for {year} Round {round}")
         event = fastf1.get_event(year, round)
 
+        # Map session codes to display names
+        session_display_names = {
+            'FP1': 'Practice 1',
+            'FP2': 'Practice 2',
+            'FP3': 'Practice 3',
+            'Q': 'Qualifying',
+            'S': 'Sprint Race',
+            'SS': 'Sprint Shootout',
+            'SQ': 'Sprint Qualifying',
+            'R': 'Race'
+        }
+
         sessions = []
         for session_name in ['FP1', 'FP2', 'FP3', 'Q', 'S', 'SS', 'SQ', 'R']:
             try:
                 session = fastf1.get_session(year, round, session_name)
                 sessions.append({
                     'name': session_name,
-                    'fullName': session.name,
+                    'fullName': session_display_names.get(session_name, session.name),
                     'date': session.date.isoformat() if hasattr(session.date, 'isoformat') else str(session.date)
                 })
             except Exception as e:
@@ -153,10 +165,14 @@ class FastF1Service:
 
         logger.info(f"Telemetry extracted: {len(telemetry)} data points, lap time={fastest_lap['LapTime']}")
 
+        # Get driver info for team name
+        driver_info = session.get_driver(driver_code)
+
         lap_info = {
             'abbreviation': driver_code,
             'lapTime': str(fastest_lap['LapTime']),
-            'compound': fastest_lap['Compound']
+            'compound': fastest_lap['Compound'],
+            'teamName': driver_info['TeamName']
         }
 
         return telemetry, lap_info
