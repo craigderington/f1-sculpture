@@ -7,7 +7,7 @@ import F1API from './api.js';
 import TaskWebSocket from './websocket.js';
 import ProgressUI from './ui.js';
 import SceneManager from './scene.js';
-import { applyTeamTheme } from './team-colors.js';
+import { applyTeamTheme, getTeamColors } from './team-colors.js';
 
 class F1SculptureApp {
     constructor() {
@@ -20,9 +20,15 @@ class F1SculptureApp {
         // Cache for driver lists (so Reset Driver is instant)
         this.driverCache = {};
 
-        // Make API available globally for cancel button
+        // Multi-driver comparison state
+        this.comparisonMode = false;
+        this.selectedDrivers = new Set();
+
+        // Make components available globally
         window.api = this.api;
         window.progressUI = this.progressUI;
+        window.sceneManager = this.sceneManager; // For tooltip close button
+        window.f1App = this; // Make app instance available to scene manager
 
         this.init();
     }
@@ -95,6 +101,11 @@ class F1SculptureApp {
             this.resetSession();
         });
 
+        // Clear drivers button
+        document.getElementById('clear-drivers').addEventListener('click', () => {
+            this.clearDriverSelection();
+        });
+
         // Toggle controls button
         document.getElementById('toggle-controls').addEventListener('click', () => {
             document.getElementById('controls').classList.toggle('hidden');
@@ -120,14 +131,15 @@ class F1SculptureApp {
     async loadEvents(year) {
         const eventSelect = document.getElementById('event');
         const sessionSelect = document.getElementById('session');
-        const driverSelect = document.getElementById('driver');
+        const driverListContainer = document.getElementById('driver-list');
 
         try {
             // Show loading state
             eventSelect.innerHTML = '<option value="">Loading events...</option>';
             eventSelect.disabled = true;
             sessionSelect.innerHTML = '<option value="">Select event first...</option>';
-            driverSelect.innerHTML = '<option value="">Select session first...</option>';
+            driverListContainer.innerHTML = '';
+            driverListContainer.classList.add('empty');
 
             const events = await this.api.getEvents(year);
 
@@ -154,13 +166,14 @@ class F1SculptureApp {
      */
     async loadSessions(year, round) {
         const sessionSelect = document.getElementById('session');
-        const driverSelect = document.getElementById('driver');
+        const driverListContainer = document.getElementById('driver-list');
 
         try {
             // Show loading state
             sessionSelect.innerHTML = '<option value="">Loading sessions...</option>';
             sessionSelect.disabled = true;
-            driverSelect.innerHTML = '<option value="">Select session first...</option>';
+            driverListContainer.innerHTML = '';
+            driverListContainer.classList.add('empty');
 
             const data = await this.api.getSessions(year, round);
 
@@ -185,55 +198,154 @@ class F1SculptureApp {
      * Load drivers for a session
      */
     async loadDrivers(year, round, session) {
-        const driverSelect = document.getElementById('driver');
+        const driverListContainer = document.getElementById('driver-list');
         const cacheKey = `${year}-${round}-${session}`;
 
         try {
             // Check if we have cached drivers
             if (this.driverCache[cacheKey]) {
                 console.log('Loading drivers from cache (instant!)');
-                this.populateDriverDropdown(this.driverCache[cacheKey]);
+                this.populateDriverCheckboxes(this.driverCache[cacheKey]);
                 return;
             }
 
             // Show loading state (can take 30-60s for first load)
-            driverSelect.innerHTML = '<option value="">Loading drivers (may take up to 60s)...</option>';
-            driverSelect.disabled = true;
+            driverListContainer.innerHTML = '<div class="loading-drivers">Loading drivers (may take up to 60s)...</div>';
+            driverListContainer.classList.remove('empty');
 
             const data = await this.api.getDrivers(year, round, session);
 
             // Cache the driver list
             this.driverCache[cacheKey] = data.drivers;
 
-            this.populateDriverDropdown(data.drivers);
+            this.populateDriverCheckboxes(data.drivers);
 
             console.log(`Loaded ${data.drivers.length} drivers (cached for future)`);
         } catch (error) {
             console.error('Error loading drivers:', error);
-            driverSelect.innerHTML = '<option value="">Error loading drivers</option>';
-            driverSelect.disabled = false;
+            driverListContainer.innerHTML = '<div class="error-loading">Error loading drivers</div>';
         }
     }
 
     /**
-     * Populate driver dropdown from driver list
+     * Populate driver checkboxes from driver list
      */
-    populateDriverDropdown(drivers) {
-        const driverSelect = document.getElementById('driver');
+    populateDriverCheckboxes(drivers) {
+        const driverListContainer = document.getElementById('driver-list');
 
-        driverSelect.innerHTML = '<option value="">Select a driver...</option>';
+        // Clear existing
+        driverListContainer.innerHTML = '';
+        driverListContainer.classList.remove('empty');
+        this.selectedDrivers.clear();
+
         drivers.forEach(driver => {
-            const option = document.createElement('option');
-            option.value = driver.abbreviation;
-            option.textContent = `#${driver.number} ${driver.fullName} - ${driver.abbreviation} (${driver.teamName})`;
-            driverSelect.appendChild(option);
-        });
-        driverSelect.disabled = false;
+            const driverItem = document.createElement('div');
+            driverItem.className = 'driver-item';
+            driverItem.dataset.driverCode = driver.abbreviation;
+            driverItem.dataset.teamName = driver.teamName;
 
-        // Add change listener to update reset button visibility
-        driverSelect.addEventListener('change', () => {
-            this.updateResetButtonVisibility();
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `driver-${driver.abbreviation}`;
+            checkbox.value = driver.abbreviation;
+            checkbox.addEventListener('change', (e) => this.handleDriverSelection(e, driver));
+
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.textContent = `#${driver.number} ${driver.fullName} - ${driver.abbreviation} (${driver.teamName})`;
+
+            driverItem.appendChild(checkbox);
+            driverItem.appendChild(label);
+
+            // Click anywhere on item to toggle
+            driverItem.addEventListener('click', (e) => {
+                if (e.target !== checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+
+            driverListContainer.appendChild(driverItem);
         });
+
+        this.updateDriverCount();
+        this.updateResetButtonVisibility();
+    }
+
+    /**
+     * Handle driver selection/deselection
+     */
+    handleDriverSelection(event, driver) {
+        const checkbox = event.target;
+        const driverItem = checkbox.closest('.driver-item');
+
+        if (checkbox.checked) {
+            // Check max limit (5 drivers)
+            if (this.selectedDrivers.size >= 5) {
+                checkbox.checked = false;
+                alert('Maximum 5 drivers allowed for comparison');
+                return;
+            }
+
+            this.selectedDrivers.add({
+                code: driver.abbreviation,
+                teamName: driver.teamName
+            });
+            driverItem.classList.add('selected');
+        } else {
+            // Remove from selection
+            const toRemove = Array.from(this.selectedDrivers).find(d => d.code === driver.abbreviation);
+            if (toRemove) {
+                this.selectedDrivers.delete(toRemove);
+            }
+            driverItem.classList.remove('selected');
+        }
+
+        this.updateDriverCount();
+        this.updateResetButtonVisibility();
+
+        console.log('Selected drivers:', Array.from(this.selectedDrivers).map(d => d.code));
+    }
+
+    /**
+     * Update driver count label
+     */
+    updateDriverCount() {
+        const countElement = document.getElementById('driver-count');
+        const clearButton = document.getElementById('clear-drivers');
+        const count = this.selectedDrivers.size;
+
+        if (count === 0) {
+            countElement.textContent = '0 selected';
+            clearButton.classList.add('hidden');
+        } else if (count === 1) {
+            countElement.textContent = '1 selected';
+            clearButton.classList.remove('hidden');
+        } else {
+            countElement.textContent = `${count} selected (comparison mode)`;
+            clearButton.classList.remove('hidden');
+        }
+
+        // Update comparison mode flag
+        this.comparisonMode = count > 1;
+    }
+
+    /**
+     * Clear all driver selections
+     */
+    clearDriverSelection() {
+        // Uncheck all checkboxes
+        const checkboxes = document.querySelectorAll('.driver-item input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+            cb.closest('.driver-item').classList.remove('selected');
+        });
+
+        this.selectedDrivers.clear();
+        this.updateDriverCount();
+        this.updateResetButtonVisibility();
+
+        console.log('Cleared all driver selections');
     }
 
     /**
@@ -243,19 +355,35 @@ class F1SculptureApp {
         const year = parseInt(document.getElementById('year').value);
         const round = parseInt(document.getElementById('event').value);
         const session = document.getElementById('session').value;
-        const driver = document.getElementById('driver').value;
 
-        if (!year || !round || !session || !driver) {
-            alert('Please select all fields');
+        if (!year || !round || !session) {
+            alert('Please select year, event, and session');
             return;
         }
 
-        console.log(`Generating sculpture: ${year} R${round} ${session} - ${driver}`);
+        // Validate driver selection
+        const driverCodes = Array.from(this.selectedDrivers).map(d => d.code);
+
+        if (driverCodes.length === 0) {
+            alert('Please select at least one driver');
+            return;
+        }
+
+        console.log(`Generating sculpture: ${year} R${round} ${session} - ${driverCodes.join(', ')}`);
 
         try {
-            // Submit task
-            const response = await this.api.submitSculptureTask(year, round, session, driver);
-            const taskId = response.task_id;
+            let response, taskId;
+
+            // Branch logic: single vs comparison
+            if (driverCodes.length === 1) {
+                // Single driver task
+                response = await this.api.submitSculptureTask(year, round, session, driverCodes[0]);
+                taskId = response.task_id;
+            } else {
+                // Multi-driver comparison task
+                response = await this.api.submitCompareTask(year, round, session, driverCodes);
+                taskId = response.task_id;
+            }
 
             console.log(`Task submitted: ${taskId}`);
 
@@ -392,12 +520,38 @@ class F1SculptureApp {
         // Show brief success message
         this.progressUI.showSuccess();
 
-        // Build and render sculpture
-        this.sceneManager.buildSculpture(sculptureData);
-        this.sceneManager.resetCamera();
+        // Determine if comparison mode (sculptureData has 'sculptures' array vs single object)
+        const isComparison = sculptureData.sculptures !== undefined;
 
-        // Update stats panel
-        this.updateStats(sculptureData);
+        if (isComparison) {
+            // Multi-driver comparison
+            console.log(`Rendering ${sculptureData.sculptures.length} sculptures (comparison mode)`);
+
+            this.sceneManager.buildMultipleSculptures(sculptureData.sculptures);
+            this.sceneManager.resetCamera();
+
+            // Update stats panel (tabbed view)
+            this.updateStatsComparison(sculptureData.sculptures);
+
+            // Apply first driver's team theme
+            if (sculptureData.sculptures.length > 0 && sculptureData.sculptures[0].driver.teamName) {
+                applyTeamTheme(sculptureData.sculptures[0].driver.teamName);
+                console.log(`Applied theme for ${sculptureData.sculptures[0].driver.teamName}`);
+            }
+        } else {
+            // Single driver
+            this.sceneManager.buildSculpture(sculptureData);
+            this.sceneManager.resetCamera();
+
+            // Update stats panel (single view)
+            this.updateStats(sculptureData);
+
+            // Apply team color theme
+            if (sculptureData.driver && sculptureData.driver.teamName) {
+                applyTeamTheme(sculptureData.driver.teamName);
+                console.log(`Applied theme for ${sculptureData.driver.teamName}`);
+            }
+        }
 
         // Cleanup
         if (this.currentWebSocket) {
@@ -412,7 +566,7 @@ class F1SculptureApp {
     }
 
     /**
-     * Update statistics panel
+     * Update statistics panel (single driver)
      */
     updateStats(data) {
         document.getElementById('stat-driver').textContent = data.driver.abbreviation;
@@ -426,6 +580,111 @@ class F1SculptureApp {
             applyTeamTheme(data.driver.teamName);
             console.log(`Applied theme for ${data.driver.teamName}`);
         }
+    }
+
+    /**
+     * Update statistics panel for comparison mode (tabbed interface)
+     */
+    updateStatsComparison(sculptures) {
+        const infoPanel = document.getElementById('info');
+        const statsContent = infoPanel.querySelector('.stats-content');
+
+        // Build tabbed interface
+        let tabsHTML = '<div class="stats-tabs">';
+        let contentHTML = '';
+
+        sculptures.forEach((sculpture, index) => {
+            const driver = sculpture.driver;
+            const isActive = index === 0 ? 'active' : '';
+
+            // Tab button (will apply team color via JavaScript after render)
+            tabsHTML += `
+                <button class="stats-tab ${isActive}" data-tab="${driver.abbreviation}" data-team="${driver.teamName}">
+                    ${driver.abbreviation}
+                </button>
+            `;
+
+            // Tab content
+            contentHTML += `
+                <div class="stats-tab-content ${isActive}" data-tab="${driver.abbreviation}">
+                    <div class="stat">
+                        <span class="stat-label">Driver:</span>
+                        <span class="stat-value">${driver.abbreviation}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Lap Time:</span>
+                        <span class="stat-value">${driver.lapTime}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Max G-Force:</span>
+                        <span class="stat-value">${sculpture.metadata.maxGForce.toFixed(2)}G</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Avg G-Force:</span>
+                        <span class="stat-value">${sculpture.metadata.avgGForce.toFixed(2)}G</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Max Speed:</span>
+                        <span class="stat-value">${sculpture.metadata.maxSpeed.toFixed(0)} km/h</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        tabsHTML += '</div>';
+
+        // Replace stats content
+        statsContent.innerHTML = tabsHTML + contentHTML;
+
+        // Apply team colors to tabs
+        const tabs = statsContent.querySelectorAll('.stats-tab');
+        tabs.forEach(tab => {
+            const teamName = tab.dataset.team;
+            if (teamName) {
+                const teamColors = getTeamColors(teamName);
+
+                // Apply team color to each tab
+                if (tab.classList.contains('active')) {
+                    tab.style.backgroundColor = teamColors.primary;
+                    tab.style.borderColor = teamColors.primary;
+                } else {
+                    tab.style.backgroundColor = 'transparent';
+                    tab.style.borderColor = teamColors.primary;
+                    tab.style.color = teamColors.primary;
+                }
+            }
+
+            // Add click handler
+            tab.addEventListener('click', () => {
+                // Remove active from all
+                tabs.forEach(t => {
+                    t.classList.remove('active');
+                    const tTeamName = t.dataset.team;
+                    if (tTeamName) {
+                        const tTeamColors = getTeamColors(tTeamName);
+                        t.style.backgroundColor = 'transparent';
+                        t.style.borderColor = tTeamColors.primary;
+                        t.style.color = tTeamColors.primary;
+                    }
+                });
+                statsContent.querySelectorAll('.stats-tab-content').forEach(c => c.classList.remove('active'));
+
+                // Activate clicked tab
+                tab.classList.add('active');
+                const tabTeamName = tab.dataset.team;
+                if (tabTeamName) {
+                    const tabTeamColors = getTeamColors(tabTeamName);
+                    tab.style.backgroundColor = tabTeamColors.primary;
+                    tab.style.borderColor = tabTeamColors.primary;
+                    tab.style.color = '#000';
+                }
+
+                const tabId = tab.dataset.tab;
+                statsContent.querySelector(`.stats-tab-content[data-tab="${tabId}"]`).classList.add('active');
+            });
+        });
+
+        console.log(`Stats panel updated with ${sculptures.length} driver tabs`);
     }
 
     /**
@@ -448,8 +707,14 @@ class F1SculptureApp {
      * Reset driver selection
      */
     resetDriver() {
-        const driverSelect = document.getElementById('driver');
-        driverSelect.innerHTML = '<option value="">Select a driver...</option>';
+        // Clear all selections
+        this.clearDriverSelection();
+
+        // Clear sculptures from 3D scene
+        this.sceneManager.disposeSculpture();
+
+        // Clear stats panel
+        this.clearStats();
 
         // Reload drivers for the current session
         const year = document.getElementById('year').value;
@@ -460,10 +725,126 @@ class F1SculptureApp {
             this.loadDrivers(year, round, session);
         }
 
-        // Update reset button visibility
-        this.updateResetButtonVisibility();
+        console.log('Driver selection reset and sculptures cleared');
+    }
 
-        console.log('Driver selection reset');
+    /**
+     * Callback when a sculpture is removed from the scene
+     */
+    onSculptureRemoved(driverCode) {
+        console.log('App notified of sculpture removal:', driverCode);
+
+        // Uncheck the driver in the selection list
+        const driverList = document.getElementById('driver-list');
+        if (driverList) {
+            const driverItems = driverList.querySelectorAll('.driver-item');
+            driverItems.forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const label = item.querySelector('label');
+
+                // Check if this is the removed driver
+                if (label && label.textContent.includes(driverCode)) {
+                    checkbox.checked = false;
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        // Remove from selectedDrivers set
+        const toRemove = Array.from(this.selectedDrivers).find(d => d.code === driverCode);
+        if (toRemove) {
+            this.selectedDrivers.delete(toRemove);
+        }
+
+        // Update driver count
+        this.updateDriverCount();
+
+        // Remove tab from stats panel if in comparison mode
+        if (this.comparisonMode) {
+            const statsContent = document.querySelector('.stats-content');
+            if (statsContent) {
+                // Remove the tab button
+                const tab = statsContent.querySelector(`.stats-tab[data-tab="${driverCode}"]`);
+                if (tab) tab.remove();
+
+                // Remove the tab content
+                const tabContent = statsContent.querySelector(`.stats-tab-content[data-tab="${driverCode}"]`);
+                if (tabContent) tabContent.remove();
+
+                // If this was the active tab, activate the first remaining tab
+                const remainingTabs = statsContent.querySelectorAll('.stats-tab');
+                if (remainingTabs.length > 0 && !statsContent.querySelector('.stats-tab.active')) {
+                    remainingTabs[0].click();
+                }
+            }
+
+            // If only one sculpture left, switch to single mode
+            if (this.sceneManager.sculptures.size === 1) {
+                console.log('Only one sculpture remaining, switching to single mode');
+                this.comparisonMode = false;
+            }
+
+            // If no sculptures left, clear stats
+            if (this.sceneManager.sculptures.size === 0) {
+                this.clearStats();
+            }
+        }
+    }
+
+    /**
+     * Clear stats panel
+     */
+    clearStats() {
+        const statElements = {
+            'stat-driver': '-',
+            'stat-laptime': '-',
+            'stat-maxg': '-',
+            'stat-avgg': '-',
+            'stat-speed': '-'
+        };
+
+        for (const [id, value] of Object.entries(statElements)) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+
+        // Clear comparison stats if they exist
+        const statsContent = document.querySelector('.stats-content');
+        if (statsContent && statsContent.querySelector('.stats-tabs')) {
+            // Restore original stats structure with interaction hint
+            statsContent.innerHTML = `
+                <div class="stat">
+                    <span class="stat-label">Driver:</span>
+                    <span class="stat-value" id="stat-driver">-</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Lap Time:</span>
+                    <span class="stat-value" id="stat-laptime">-</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Max G-Force:</span>
+                    <span class="stat-value" id="stat-maxg">-</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Avg G-Force:</span>
+                    <span class="stat-value" id="stat-avgg">-</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Max Speed:</span>
+                    <span class="stat-value" id="stat-speed">-</span>
+                </div>
+                <div class="interaction-hint">
+                    <div class="hint-icon">💡</div>
+                    <div class="hint-text">
+                        <strong>Interactive Features:</strong><br>
+                        • Click on ribbons for G-force data<br>
+                        • Hover over labels and click × to remove
+                    </div>
+                </div>
+            `;
+        }
     }
 
     /**
@@ -471,10 +852,15 @@ class F1SculptureApp {
      */
     resetSession() {
         const sessionSelect = document.getElementById('session');
-        const driverSelect = document.getElementById('driver');
+        const driverListContainer = document.getElementById('driver-list');
 
         sessionSelect.innerHTML = '<option value="">Select a session...</option>';
-        driverSelect.innerHTML = '<option value="">Select session first...</option>';
+        driverListContainer.innerHTML = '';
+        driverListContainer.classList.add('empty');
+
+        // Clear driver selections
+        this.selectedDrivers.clear();
+        this.updateDriverCount();
 
         // Reload sessions for the current event
         const year = document.getElementById('year').value;
@@ -514,12 +900,11 @@ class F1SculptureApp {
      */
     updateResetButtonVisibility() {
         const sessionSelect = document.getElementById('session');
-        const driverSelect = document.getElementById('driver');
         const resetDriverBtn = document.getElementById('reset-driver');
         const resetSessionBtn = document.getElementById('reset-session');
 
         const hasSession = sessionSelect.value !== '';
-        const hasDriver = driverSelect.value !== '';
+        const hasDriver = this.selectedDrivers.size > 0;
 
         // Show reset driver button only if driver is selected
         if (hasDriver) {

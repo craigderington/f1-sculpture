@@ -63,11 +63,11 @@ def generate_sculpture_task(
 
         # Map session codes to friendly display names EARLY (before any progress updates)
         session_display_names = {
-            'FP1': 'Practice 1',
-            'FP2': 'Practice 2',
-            'FP3': 'Practice 3',
+            'FP1': 'Free Practice 1',
+            'FP2': 'Free Practice 2',
+            'FP3': 'Free Practice 3',
             'Q': 'Qualifying',
-            'S': 'Sprint Race',
+            'S': 'Sprint',
             'SS': 'Sprint Shootout',
             'SQ': 'Sprint Qualifying',
             'R': 'Race'
@@ -234,20 +234,39 @@ def compare_drivers_task(
         if len(drivers) > 5:
             raise ValueError("Maximum 5 drivers allowed for comparison")
 
+        # Map session codes to friendly display names
+        session_display_names = {
+            'FP1': 'Free Practice 1',
+            'FP2': 'Free Practice 2',
+            'FP3': 'Free Practice 3',
+            'Q': 'Qualifying',
+            'S': 'Sprint',
+            'SS': 'Sprint Shootout',
+            'SQ': 'Sprint Qualifying',
+            'R': 'Race'
+        }
+        session_friendly_name = session_display_names.get(session, session)
+
         # Stage 1: Loading session (15%)
         self.update_state(
             state='PROGRESS',
             meta={
                 'stage': 'loading_session',
                 'progress': 15,
-                'message': f'Loading {year} Round {round} {session} session data...'
+                'message': f'Loading {session_friendly_name} session for Round {round}...',
+                'year': year,
+                'session_name': session_friendly_name
             }
         )
 
         f1_service = FastF1Service()
         session_obj = f1_service.load_session(year, round, session)
 
-        logger.info(f"Session loaded for {len(drivers)} drivers")
+        # Get full session details for better UI display
+        event_name = session_obj.event['EventName']
+        session_date = str(session_obj.date.date()) if hasattr(session_obj.date, 'date') else str(session_obj.date)
+
+        logger.info(f"Session loaded for {len(drivers)} drivers: {event_name} - {session_friendly_name}")
 
         # Process each driver
         sculptures = []
@@ -262,7 +281,11 @@ def compare_drivers_task(
                 meta={
                     'stage': 'extracting_telemetry',
                     'progress': driver_progress,
-                    'message': f'Processing driver {idx + 1}/{len(drivers)}: {driver}...'
+                    'message': f'Processing driver {idx + 1}/{len(drivers)}: {driver}...',
+                    'event_name': event_name,
+                    'session_name': session_friendly_name,
+                    'session_date': session_date,
+                    'year': year
                 }
             )
 
@@ -322,12 +345,27 @@ def load_session_metadata_task(
     try:
         logger.info(f"Loading session metadata: {year} R{round} {session}")
 
+        # Map session codes to friendly display names
+        session_display_names = {
+            'FP1': 'Free Practice 1',
+            'FP2': 'Free Practice 2',
+            'FP3': 'Free Practice 3',
+            'Q': 'Qualifying',
+            'S': 'Sprint',
+            'SS': 'Sprint Shootout',
+            'SQ': 'Sprint Qualifying',
+            'R': 'Race'
+        }
+        session_friendly_name = session_display_names.get(session, session)
+
         self.update_state(
             state='PROGRESS',
             meta={
                 'stage': 'loading_session',
                 'progress': 50,
-                'message': f'Loading session metadata...'
+                'message': f'Loading {session_friendly_name} session metadata...',
+                'year': year,
+                'session_name': session_friendly_name
             }
         )
 
@@ -335,10 +373,13 @@ def load_session_metadata_task(
         session_obj = f1_service.load_session(year, round, session)
         drivers = f1_service.get_drivers_in_session(session_obj)
 
+        event_name = session_obj.event['EventName']
+        session_date = str(session_obj.date.date()) if hasattr(session_obj.date, 'date') else str(session_obj.date)
+
         metadata = {
-            'event_name': session_obj.event['EventName'],
-            'session_name': session_obj.name,
-            'session_date': str(session_obj.date),
+            'event_name': event_name,
+            'session_name': session_friendly_name,
+            'session_date': session_date,
             'drivers': drivers,
             'total_drivers': len(drivers)
         }

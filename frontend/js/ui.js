@@ -94,6 +94,23 @@ class ProgressUI {
     }
 
     /**
+     * Convert session code to friendly name
+     */
+    getFriendlySessionName(sessionCode) {
+        const sessionNames = {
+            'FP1': 'Free Practice 1',
+            'FP2': 'Free Practice 2',
+            'FP3': 'Free Practice 3',
+            'Q': 'Qualifying',
+            'R': 'Race',
+            'S': 'Sprint',
+            'SS': 'Sprint Shootout',
+            'SQ': 'Sprint Qualifying'
+        };
+        return sessionNames[sessionCode] || sessionCode;
+    }
+
+    /**
      * Update stage indicator with icon and label
      */
     updateStageIndicator(stage, metadata = {}) {
@@ -125,9 +142,10 @@ class ProgressUI {
             // Build session details header if metadata is available
             let sessionDetails = '';
             if (metadata.year && metadata.event_name && metadata.session_name) {
+                const friendlySessionName = this.getFriendlySessionName(metadata.session_name);
                 sessionDetails = `
                     <div class="session-details">
-                        ${metadata.year} ${metadata.event_name} - ${metadata.session_name}
+                        ${metadata.year} ${metadata.event_name} - ${friendlySessionName}
                         ${metadata.session_date ? `<br><span class="session-date">${metadata.session_date}</span>` : ''}
                     </div>
                 `;

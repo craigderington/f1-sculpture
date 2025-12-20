@@ -2,7 +2,9 @@
 
 An innovative 3D visualization of Formula 1 telemetry data that transforms driver performance into interactive sculptures. Each lap becomes a unique 3D artwork where the track layout is extruded vertically based on G-force intensity.
 
-**NEW in v2.0:** Async architecture with real-time progress updates, Docker deployment, and Redis caching!
+**NEW in v2.1:** Multi-driver comparison, interactive ribbons with G-force tooltips, and removable sculptures!
+
+**v2.0:** Async architecture with real-time progress updates, Docker deployment, and Redis caching
 
 ## 🎨 Concept
 
@@ -14,6 +16,24 @@ Instead of traditional 2D telemetry graphs, this project creates 3D "sculptures"
 Different drivers create distinct "sculpture signatures" based on their driving style, braking points, and cornering techniques.
 
 ## 🚀 Features
+
+### v2.1 - Interactive Edition (NEW!)
+- **Multi-Driver Comparison**: Select up to 5 drivers and compare them side-by-side
+  - Checkbox-based driver selection with live count
+  - Team-colored ribbons for instant visual distinction
+  - Tabbed stats panel for each driver
+  - Dynamic spacing and labeling
+- **Interactive G-Force Tooltips**: Click anywhere on a ribbon to see detailed telemetry
+  - Combined G-force magnitude
+  - Longitudinal G (acceleration/braking)
+  - Lateral G (cornering forces)
+  - Speed and distance at that exact point
+- **Removable Sculptures**: Hover over driver labels and click × to remove individual sculptures
+- **Enhanced UX**:
+  - Full session names (no abbreviations)
+  - Interactive features hint panel
+  - Smart reset buttons (driver/session)
+  - Frontend caching for instant driver reset
 
 ### v2.0 - Async Edition
 - **Real-time Progress Updates**: WebSocket-powered progress indicators with 3 detailed stages
@@ -28,7 +48,7 @@ Different drivers create distinct "sculpture signatures" based on their driving 
 - **Multi-Season Support**: Explore races from 2023, 2024, and beyond
 - **Session Comparison**: View practice, qualifying, and race sessions
 - **Driver Analysis**: Compare how different drivers tackle the same circuit
-- **Beautiful Rendering**: Custom shaders and lighting for stunning visuals
+- **Beautiful Rendering**: Custom shaders, team colors, and dynamic lighting
 
 ## 🛠️ Tech Stack
 
@@ -98,12 +118,22 @@ This starts:
 6. Watch real-time progress: Loading session → Extracting telemetry → Processing sculpture
 7. Explore the 3D sculpture with mouse controls
 
-## 🎮 Mouse Controls
+## 🎮 Controls & Interaction
 
+### Camera Controls
 - **Left Click + Drag**: Rotate the sculpture
 - **Right Click + Drag**: Pan the view
 - **Scroll Wheel**: Zoom in/out
 - **Reset Camera**: Button to return to default view
+
+### Interactive Features (v2.1)
+- **Click on Ribbons**: View detailed G-force telemetry at any point
+  - Combined, longitudinal, and lateral G-forces
+  - Speed and distance data
+  - Close with × button or ESC key
+- **Hover over Labels**: See × button to remove individual sculptures
+- **Multi-Select Drivers**: Use checkboxes to compare up to 5 drivers
+- **Clear All**: Remove all driver selections at once
 
 ## 🐳 Docker Commands (Makefile)
 
@@ -343,6 +373,9 @@ Ideas for new visualizations or features? Open an issue or submit a PR!
 - [ ] Export sculptures as 3D models (.obj, .stl)
 - [ ] VR/AR support
 - [ ] Real-time race data during live sessions
+- [x] Multi-driver comparison (v2.1 ✅)
+- [x] Interactive telemetry tooltips (v2.1 ✅)
+- [x] Team color theming (v2.1 ✅)
 
 ## 📜 License
 
@@ -358,4 +391,4 @@ MIT License - Feel free to use and modify
 
 **Built with ❤️ for F1 fans who appreciate data visualization**
 
-v2.0 - Async Edition [@craigderington](https://craigderington.dev)
+v2.1 - Interactive Edition [@craigderington](https://craigderington.dev)

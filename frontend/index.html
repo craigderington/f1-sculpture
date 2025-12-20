@@ -42,10 +42,16 @@
             </div>
 
             <div class="control-group">
-                <label for="driver">Driver</label>
-                <select id="driver">
-                    <option value="">Select session first...</option>
-                </select>
+                <label for="driver-list">Drivers (1-5 max)</label>
+                <div class="driver-selection">
+                    <div id="driver-list" class="driver-list">
+                        <!-- Dynamically populated checkboxes -->
+                    </div>
+                    <div class="driver-selection-info">
+                        <span id="driver-count">0 selected</span>
+                        <button type="button" id="clear-drivers" class="clear-drivers-btn hidden">Clear All</button>
+                    </div>
+                </div>
             </div>
 
             <button id="load-sculpture">Generate Sculpture</button>
@@ -85,6 +91,14 @@
             <div class="stat">
                 <span class="stat-label">Max Speed:</span>
                 <span class="stat-value" id="stat-speed">-</span>
+            </div>
+            <div class="interaction-hint">
+                <div class="hint-icon">💡</div>
+                <div class="hint-text">
+                    <strong>Interactive Features:</strong><br>
+                    • Click on ribbons for G-force data<br>
+                    • Hover over labels and click × to remove
+                </div>
             </div>
             </div>
         </div>
