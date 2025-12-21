@@ -119,19 +119,135 @@
             </div>
         </div>
 
+        <!-- Help Button -->
+        <button id="help-button" class="help-button" title="Help & Guide">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 16v.5M12 12c0-1.5 2-1.5 2-3 0-1.5-1.5-2-2-2s-2 .5-2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </button>
+
+        <!-- Help Modal -->
+        <div id="help-modal-overlay" class="help-modal-overlay">
+            <div class="help-modal">
+                <div class="help-modal-header">
+                    <h2>Guide & Legend</h2>
+                    <button id="close-help" class="close-help-btn">×</button>
+                </div>
+
+                <div class="help-modal-content">
+                <!-- What Am I Looking At -->
+                <section class="help-section">
+                    <h3>📊 What Am I Looking At?</h3>
+                    <p>Each sculpture is a 3D visualization of a driver's fastest lap, where:</p>
+                    <ul>
+                        <li><strong>X/Y Plane:</strong> The actual track layout</li>
+                        <li><strong>Height (Z-axis):</strong> Combined G-force magnitude</li>
+                        <li><strong>Color:</strong> G-force intensity</li>
+                    </ul>
+                    <p class="help-note">Higher peaks = More G-force experienced by the driver</p>
+                </section>
+
+                <!-- G-Force Legend -->
+                <section class="help-section">
+                    <h3>🎨 G-Force Color Legend</h3>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(90deg, #00ff00, #7fff00);"></div>
+                            <span><strong>Green:</strong> Low G (0-2G) - Straights, light corners</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(90deg, #ffff00, #ff8000);"></div>
+                            <span><strong>Yellow/Orange:</strong> Medium G (2-4G) - Heavy braking, fast corners</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(90deg, #ff3333, #ff0000);"></div>
+                            <span><strong>Red:</strong> High G (4G+) - Extreme braking, chicanes</span>
+                        </div>
+                    </div>
+                    <div class="gforce-types">
+                        <p><strong>Longitudinal G:</strong> Forward/backward forces (acceleration & braking)</p>
+                        <p><strong>Lateral G:</strong> Side-to-side forces (cornering)</p>
+                        <p><strong>Combined G:</strong> Total G-force magnitude</p>
+                    </div>
+                </section>
+
+                <!-- Camera Controls -->
+                <section class="help-section">
+                    <h3>🎮 Camera Controls</h3>
+                    <div class="control-list">
+                        <div class="control-item">
+                            <strong>Left Click + Drag:</strong> Rotate view
+                        </div>
+                        <div class="control-item">
+                            <strong>Right Click + Drag:</strong> Pan camera
+                        </div>
+                        <div class="control-item">
+                            <strong>Scroll Wheel:</strong> Zoom in/out
+                        </div>
+                        <div class="control-item">
+                            <strong>Reset Camera Button:</strong> Return to default view
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Interactive Features -->
+                <section class="help-section">
+                    <h3>✨ Interactive Features</h3>
+                    <div class="control-list">
+                        <div class="control-item">
+                            <strong>Click on Ribbons:</strong> View detailed telemetry data at that point
+                        </div>
+                        <div class="control-item">
+                            <strong>Hover Labels:</strong> Click × button to remove individual sculptures
+                        </div>
+                        <div class="control-item">
+                            <strong>Multi-Select:</strong> Compare up to 5 drivers side-by-side
+                        </div>
+                        <div class="control-item">
+                            <strong>Team Colors:</strong> Each driver's sculpture uses their team colors
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tips -->
+                <section class="help-section">
+                    <h3>💡 Pro Tips</h3>
+                    <ul>
+                        <li>Qualifying sessions have the cleanest data (push laps)</li>
+                        <li>Street circuits (Monaco, Singapore) show dramatic G-forces</li>
+                        <li>First load takes 30-60s, subsequent loads are instant</li>
+                        <li>Click on high red peaks to see extreme braking zones</li>
+                    </ul>
+                </section>
+
+                <!-- Credits -->
+                <section class="help-section help-credits">
+                    <h3>👨‍💻 Credits & Source</h3>
+                    <p><strong>Created by:</strong> Craig Derington</p>
+                    <p>
+                        <a href="https://craigderington.dev" target="_blank" rel="noopener" class="help-link">
+                            🌐 craigderington.dev
+                        </a>
+                    </p>
+                    <p>
+                        <a href="https://github.com/craigderington/f1-sculpture" target="_blank" rel="noopener" class="help-link">
+                            <svg class="help-github-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                            </svg>
+                            View Source on GitHub
+                        </a>
+                    </p>
+                    <p class="help-data-credit">Data: <a href="https://github.com/theOehrly/Fast-F1" target="_blank" rel="noopener" class="help-link">FastF1 Library</a></p>
+                </section>
+                </div>
+            </div>
+        </div>
+
         <!-- Footer -->
         <footer id="footer">
             <div class="footer-content">
-                <span class="footer-text">F1 G-Force Sculpture Gallery v2.0</span>
-                <span class="footer-separator">•</span>
-                <a href="https://github.com/yourusername/f1-sculpture" target="_blank" rel="noopener" class="footer-link">
-                    <svg class="github-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
-                    </svg>
-                    GitHub
-                </a>
-                <span class="footer-separator">•</span>
-                <a href="https://craigderington.dev" target="_blank" rel="noopener" class="footer-link">@craigderington</a>
+                <span class="footer-text">F1 G-Force Sculpture Gallery v2.1</span>
             </div>
         </footer>
     </div>

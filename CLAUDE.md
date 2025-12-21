@@ -21,7 +21,7 @@ F1 G-Force Sculpture Gallery v2.1 - A production-ready 3D visualization tool tha
 - ✅ **Smart caching** - Redis caches processed sculptures
 - ✅ **Modular frontend** - Separate JS files (api.js, websocket.js, ui.js, scene.js, main.js, team-colors.js)
 - ✅ **Docker deployment** - Full containerization with docker-compose
-- ✅ **Production ready** - Health checks, monitoring, error handling
+- ✅ **Production ready** - Docker container health checks, API health endpoints, monitoring, error handling
 
 ### New in v2.1
 - ✅ **Multi-driver comparison** - Compare up to 5 drivers side-by-side with checkbox selection
@@ -43,6 +43,13 @@ F1 G-Force Sculpture Gallery v2.1 - A production-ready 3D visualization tool tha
 - ✅ **Session details** - Full event/session/date metadata in progress overlay with friendly names
 - ✅ **Modern dropdowns** - Custom styled selects with theme-colored arrows and hover effects
 - ✅ **Frontend caching** - Instant driver reset using in-memory cache
+- ✅ **Help panel & guide** - Comprehensive slide-in documentation panel from right side
+  - What the sculpture represents (axes, colors, G-forces)
+  - Visual G-force color legend with gradients (green→yellow→red)
+  - Complete camera controls and interaction guide
+  - Pro tips for best sessions and circuits
+  - Credits section with GitHub link and author info (Craig Derington)
+  - Opens with floating ? button, closes with × or ESC key
 - ✅ **Comprehensive FAQ** - Full user documentation covering all features and troubleshooting
 
 ## File Structure
@@ -311,9 +318,9 @@ Frontend Caching (Driver Reset):
 
 **5. Floating Footer**
 - Fixed position at bottom of viewport
-- Contains: Project name, version, GitHub link, author credit
+- Simplified design: Project name and version only ("F1 G-Force Sculpture Gallery v2.1")
 - Semi-transparent with theme-colored accents
-- GitHub icon (SVG) with hover effects
+- GitHub link and credits moved to help panel for cleaner UI
 
 **6. Granular Progress Bar**
 - **Direct Updates**: Simple CSS transitions (0.3s) for smooth visual effect without complex animations
@@ -322,6 +329,24 @@ Frontend Caching (Driver Reset):
 - **Session Details**: Displays full event name, friendly session type, and date during loading
   - No more cryptic codes: "Q" → "Qualifying", "R" → "Race", "S" → "Sprint Race"
 - **Metadata Display**: Year, event name, session name, and session date prominently shown
+
+**7. Help Panel & Documentation**
+- **Floating Help Button**: Question mark (?) icon in bottom-right corner
+  - Theme-colored circular button with hover effects
+  - Fixed position, always accessible
+- **Slide-in Panel**: 420px wide panel slides from right side with smooth animation
+  - Full-height scrollable content with custom scrollbar
+  - Backdrop blur effect for modern aesthetic
+- **Comprehensive Sections**:
+  - 📊 What Am I Looking At - Explains axes, height, colors
+  - 🎨 G-Force Color Legend - Visual gradients with ranges and descriptions
+  - G-Force Types - Longitudinal, lateral, combined definitions
+  - 🎮 Camera Controls - Left/right click, scroll wheel
+  - ✨ Interactive Features - Ribbon tooltips, label removal, multi-select
+  - 💡 Pro Tips - Best sessions/circuits, caching behavior
+  - 👨‍💻 Credits & Source - Craig Derington, GitHub link, FastF1 credit
+- **Keyboard Support**: ESC key to close panel
+- **Mobile Responsive**: Full-width on mobile devices
 
 ### UI Layout
 
@@ -343,7 +368,7 @@ Frontend Caching (Driver Reset):
 │                                                  │
 │           3D Sculpture Rendering Area            │
 │              (Three.js Canvas)                   │
-│                                                  │
+│                                            [?]   │  ← Help button (bottom-right)
 └──────────────────────────────────────────────────┘
 
                                     ┌───────────────┐
@@ -356,7 +381,7 @@ Frontend Caching (Driver Reset):
                                     └───────────────┘
 
 ┌──────────────────────────────────────────────────┐
-│ F1 Gallery v2.1 • [GitHub Icon] GitHub • Craig  │  ← Footer (themed)
+│        F1 G-Force Sculpture Gallery v2.1         │  ← Footer (simplified, themed)
 └──────────────────────────────────────────────────┘
 ```
 

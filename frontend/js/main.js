@@ -115,6 +115,37 @@ class F1SculptureApp {
         document.getElementById('toggle-stats').addEventListener('click', () => {
             this.toggleStats();
         });
+
+        // Help modal toggle
+        const helpModalOverlay = document.getElementById('help-modal-overlay');
+        const helpButton = document.getElementById('help-button');
+        const closeHelpBtn = document.getElementById('close-help');
+
+        // Open modal
+        helpButton.addEventListener('click', () => {
+            helpModalOverlay.classList.add('active');
+        });
+
+        // Close modal via close button
+        closeHelpBtn.addEventListener('click', () => {
+            helpModalOverlay.classList.remove('active');
+        });
+
+        // Close modal by clicking on overlay (outside modal)
+        helpModalOverlay.addEventListener('click', (event) => {
+            if (event.target === helpModalOverlay) {
+                helpModalOverlay.classList.remove('active');
+            }
+        });
+
+        // ESC key to close help modal
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                if (helpModalOverlay.classList.contains('active')) {
+                    helpModalOverlay.classList.remove('active');
+                }
+            }
+        });
     }
 
     /**

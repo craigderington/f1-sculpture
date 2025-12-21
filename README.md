@@ -29,6 +29,12 @@ Different drivers create distinct "sculpture signatures" based on their driving 
   - Lateral G (cornering forces)
   - Speed and distance at that exact point
 - **Removable Sculptures**: Hover over driver labels and click × to remove individual sculptures
+- **Help Panel & Guide**: Comprehensive slide-in help panel with user documentation
+  - What the sculpture represents (axes, colors, G-forces)
+  - Visual G-force color legend with gradients
+  - Complete camera controls and interaction guide
+  - Pro tips and best practices
+  - Credits and source repository links
 - **Enhanced UX**:
   - Full session names (no abbreviations)
   - Interactive features hint panel
@@ -40,7 +46,7 @@ Different drivers create distinct "sculpture signatures" based on their driving 
 - **Background Processing**: Celery workers handle long-running telemetry processing
 - **Smart Caching**: Redis caches processed sculptures for instant subsequent loads (24hr TTL)
 - **Docker Deployment**: Full containerized setup with docker-compose
-- **Production Ready**: Health checks, monitoring with Flower, and graceful error handling
+- **Production Ready**: Docker container health checks, API health endpoints, monitoring with Flower, and graceful error handling
 
 ### Core Features
 - **3D Interactive Visualization**: Rotate, zoom, and explore driver sculptures from any angle
@@ -134,6 +140,10 @@ This starts:
 - **Hover over Labels**: See × button to remove individual sculptures
 - **Multi-Select Drivers**: Use checkboxes to compare up to 5 drivers
 - **Clear All**: Remove all driver selections at once
+- **Help Button (?)**: Click the help button in bottom-right corner for comprehensive guide
+  - Opens slide-in panel with full documentation
+  - Includes color legend, controls, tips, and credits
+  - Close with × button or ESC key
 
 ## 🐳 Docker Commands (Makefile)
 
