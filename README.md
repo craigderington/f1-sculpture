@@ -1,5 +1,7 @@
 # F1 G-Force Sculpture Gallery
 
+![f1-sculpture-logo](https://raw.githubusercontent.com/craigderington/f1-sculptures/refs/heads/master/assets/f1-sculptures-logo.png)
+
 An innovative 3D visualization of Formula 1 telemetry data that transforms driver performance into interactive sculptures. Each lap becomes a unique 3D artwork where the track layout is extruded vertically based on G-force intensity.
 
 **NEW in v2.1:** Multi-driver comparison, interactive ribbons with G-force tooltips, and removable sculptures!
