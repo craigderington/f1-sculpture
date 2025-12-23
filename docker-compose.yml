@@ -29,7 +29,7 @@ services:
       - FASTF1_CACHE_DIR=/app/cache/fastf1
       - LOG_LEVEL=INFO
       - API_PORT=8000
-      - 'CORS_ORIGINS=["http://localhost:3000", "http://localhost:80", "http://127.0.0.1:3000", "https://f1-sculptures.com", "http://f1-sculptures.com"]'
+      - 'CORS_ORIGINS=["http://localhost:3000", "http://localhost:80", "http://127.0.0.1:3000", "https://f1-sculptures.com", "http://f1-sculptures.com", "http://682c40ce4e12b41065558d5a78e17d82-513218741.us-east-1.elb.amazonaws.com", "https://682c40ce4e12b41065558d5a78e17d82-513218741.us-east-1.elb.amazonaws.com"]'
     volumes:
       - fastf1_cache:/app/cache/fastf1
       - ./backend:/app/backend:ro  # Development: hot reload
