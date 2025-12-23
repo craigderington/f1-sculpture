@@ -6,14 +6,37 @@ from celery import Task
 from backend.tasks.celery_app import celery_app
 from backend.services.fastf1_service import FastF1Service
 from backend.services.telemetry_processor import TelemetryProcessor
-from backend.config import setup_fastf1_cache
+from backend.config import setup_fastf1_cache, settings
 import logging
 from typing import Dict, Any, List
+import redis
+import json
 
 logger = logging.getLogger(__name__)
 
 # Initialize FastF1 cache on worker startup
 setup_fastf1_cache()
+
+# Initialize Redis client for caching (synchronous)
+redis_client = redis.from_url(settings.redis_url, decode_responses=True)
+
+
+def cache_sculpture(year: int, round: int, session: str, driver: str, sculpture_data: Dict[str, Any]):
+    """
+    Cache a sculpture in Redis with TTL.
+    Uses synchronous Redis client since Celery tasks are synchronous.
+    """
+    try:
+        cache_key = f"f1:sculpture:{year}:{round}:{session}:{driver}"
+        redis_client.setex(
+            cache_key,
+            settings.sculpture_cache_ttl,
+            json.dumps(sculpture_data)
+        )
+        logger.info(f"Cached sculpture: {cache_key}")
+    except Exception as e:
+        logger.error(f"Failed to cache sculpture: {e}")
+        # Don't raise - caching failure shouldn't fail the task
 
 
 class CallbackTask(Task):
@@ -194,6 +217,9 @@ def generate_sculpture_task(
 
         logger.info(f"Sculpture generated successfully for {driver}")
 
+        # Cache the sculpture in Redis for future requests
+        cache_sculpture(year, round, session, driver, sculpture_data)
+
         return sculpture_data
 
     except ValueError as e:
@@ -297,6 +323,9 @@ def compare_drivers_task(
                 sculpture_data = processor.process_telemetry_to_sculpture(telemetry)
                 sculpture_data['driver'] = lap_info
                 sculpture_data['driverCode'] = driver
+
+                # Cache individual driver sculpture
+                cache_sculpture(year, round, session, driver, sculpture_data)
 
                 sculptures.append(sculpture_data)
 

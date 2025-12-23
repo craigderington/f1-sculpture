@@ -13,6 +13,7 @@ help:
 	@echo "  make logs           - View logs from all services"
 	@echo "  make logs-api       - View API logs"
 	@echo "  make logs-worker    - View Celery worker logs"
+	@echo "  make logs-beat      - View Celery Beat scheduler logs"
 	@echo "  make shell-api      - Open shell in API container"
 	@echo "  make shell-worker   - Open shell in worker container"
 	@echo "  make redis-cli      - Connect to Redis CLI"
@@ -21,6 +22,7 @@ help:
 	@echo "  make test           - Run tests"
 	@echo "  make flower         - Open Flower monitoring (http://localhost:5555)"
 	@echo "  make health         - Check API health status"
+	@echo "  make warm-cache     - Manually trigger cache warming for recent races"
 	@echo ""
 
 # Build Docker images
@@ -61,6 +63,10 @@ logs-api:
 logs-worker:
 	docker-compose logs -f celery_worker
 
+# View Celery Beat scheduler logs
+logs-beat:
+	docker-compose logs -f celery_beat
+
 # View Redis logs
 logs-redis:
 	docker-compose logs -f redis
@@ -95,6 +101,13 @@ test:
 health:
 	@echo "Checking API health..."
 	@curl -s http://localhost:8000/health | python3 -m json.tool || echo "API not responding"
+
+# Manually trigger cache warming
+warm-cache:
+	@echo "Triggering cache warming for recent races..."
+	@curl -X POST http://localhost:8000/api/cache/warm/recent | python3 -m json.tool || echo "Failed to trigger cache warming"
+	@echo ""
+	@echo "Check progress in Flower or with 'make logs-worker'"
 
 # Open Flower monitoring
 flower:

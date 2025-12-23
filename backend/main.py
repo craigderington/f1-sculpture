@@ -30,6 +30,10 @@ from backend.tasks.sculpture_tasks import (
     compare_drivers_task,
     load_session_metadata_task
 )
+from backend.tasks.cache_warming import (
+    warm_cache_for_recent_races,
+    warm_cache_specific_race
+)
 from backend.tasks.celery_app import celery_app
 from backend.websocket.manager import ws_manager
 
@@ -441,6 +445,66 @@ async def clear_sculpture_cache():
         return {"message": "Sculpture cache cleared"}
     except Exception as e:
         logger.error(f"Error clearing sculpture cache: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/cache/warm/recent", tags=["Cache"])
+async def trigger_cache_warming():
+    """
+    Manually trigger cache warming for recent popular races.
+
+    Pre-loads:
+    - Latest 3 completed races
+    - Qualifying + Race sessions only
+    - Top 15 drivers by popularity
+
+    Returns task ID to track progress.
+    """
+    try:
+        logger.info("Manual cache warming triggered")
+        task = warm_cache_for_recent_races.apply_async()
+
+        return {
+            "message": "Cache warming started",
+            "task_id": task.id,
+            "status": "Check task status at /api/tasks/{task_id}"
+        }
+    except Exception as e:
+        logger.error(f"Error starting cache warming: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/cache/warm/race", tags=["Cache"])
+async def warm_specific_race(
+    year: int,
+    round: int,
+    sessions: List[str] = None,
+    drivers: List[str] = None
+):
+    """
+    Warm cache for a specific race.
+
+    Args:
+        year: F1 season year
+        round: Race round number
+        sessions: Optional list of sessions (default: ['Q', 'R'])
+        drivers: Optional list of driver codes (default: all drivers)
+
+    Returns task ID to track progress.
+    """
+    try:
+        logger.info(f"Manual cache warming for {year} R{round}")
+        task = warm_cache_specific_race.apply_async(
+            args=[year, round, sessions, drivers]
+        )
+
+        return {
+            "message": f"Cache warming started for {year} Round {round}",
+            "task_id": task.id,
+            "status": "Check task status at /api/tasks/{task_id}"
+        }
+    except Exception as e:
+        logger.error(f"Error starting specific race warming: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

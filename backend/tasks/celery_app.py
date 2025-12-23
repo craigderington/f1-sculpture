@@ -3,6 +3,7 @@ Celery application configuration for F1 Sculpture Gallery.
 """
 
 from celery import Celery
+from celery.schedules import crontab
 from backend.config import settings
 import logging
 
@@ -13,7 +14,7 @@ celery_app = Celery(
     'f1_sculpture',
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=['backend.tasks.sculpture_tasks']
+    include=['backend.tasks.sculpture_tasks', 'backend.tasks.cache_warming']
 )
 
 # Configure Celery
@@ -47,6 +48,15 @@ celery_app.conf.update(
 
     # Monitoring
     task_send_sent_event=True,
+
+    # Periodic Tasks (Celery Beat)
+    beat_schedule={
+        'warm-cache-weekly': {
+            'task': 'warm_cache_for_recent_races',
+            'schedule': crontab(hour=3, minute=0, day_of_week=1),  # Every Monday at 3 AM
+            'options': {'expires': 3600}  # Task expires after 1 hour
+        },
+    },
 )
 
 logger.info(f"Celery app configured with broker: {settings.celery_broker_url}")
